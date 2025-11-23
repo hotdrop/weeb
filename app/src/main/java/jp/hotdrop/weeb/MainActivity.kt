@@ -54,7 +54,6 @@ class MainActivity : ComponentActivity() {
                             onOpenBookmarkList = { navController.navigate(AppDestination.Bookmark.route) },
                             onOpenBookmarkDialog = viewModel::openBookmarkDialog,
                             onPageUpdated = viewModel::onPageUpdated,
-                            onCreateCategory = viewModel::createCategory,
                             onSelectCategory = viewModel::selectCategory,
                             onBookmarkTitleChange = viewModel::updateBookmarkTitle,
                             onSaveBookmark = viewModel::saveBookmark,

@@ -81,7 +81,6 @@ fun MainScreen(
     onOpenBookmarkList: () -> Unit,
     onOpenBookmarkDialog: () -> Unit,
     onPageUpdated: (String, String?, Boolean) -> Unit,
-    onCreateCategory: (String) -> Unit,
     onSelectCategory: (Long) -> Unit,
     onBookmarkTitleChange: (String) -> Unit,
     onSaveBookmark: () -> Unit,
@@ -107,7 +106,6 @@ fun MainScreen(
     }
     val defaultUserAgent = remember { mutableStateOf<String?>(null) }
     var menuExpanded by remember { mutableStateOf(false) }
-    var newCategoryName by remember { mutableStateOf("") }
 
     DisposableEffect(Unit) {
         val client = object : WebViewClient() {
@@ -300,11 +298,8 @@ fun MainScreen(
             categories = state.categories,
             onTitleChange = onBookmarkTitleChange,
             onCategorySelect = onSelectCategory,
-            onCreateCategory = { name -> onCreateCategory(name) },
             onSave = onSaveBookmark,
-            onDismiss = onCloseBookmarkDialog,
-            newCategoryName = newCategoryName,
-            onNewCategoryNameChange = { newCategoryName = it }
+            onDismiss = onCloseBookmarkDialog
         )
     }
 }
@@ -315,11 +310,8 @@ private fun BookmarkSaveDialog(
     categories: List<BookMarkCategory>,
     onTitleChange: (String) -> Unit,
     onCategorySelect: (Long) -> Unit,
-    onCreateCategory: (String) -> Unit,
     onSave: () -> Unit,
-    onDismiss: () -> Unit,
-    newCategoryName: String,
-    onNewCategoryNameChange: (String) -> Unit
+    onDismiss: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -376,18 +368,6 @@ private fun BookmarkSaveDialog(
                             onClick = { onCategorySelect(category.id) }
                         )
                     }
-                }
-                OutlinedTextField(
-                    value = newCategoryName,
-                    onValueChange = onNewCategoryNameChange,
-                    singleLine = true,
-                    label = { Text(text = "新規カテゴリ名") }
-                )
-                Button(
-                    onClick = { onCreateCategory(newCategoryName) },
-                    enabled = newCategoryName.isNotBlank()
-                ) {
-                    Text(text = "カテゴリ追加")
                 }
             }
         }

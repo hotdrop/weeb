@@ -118,18 +118,6 @@ class MainViewModel @Inject constructor(
         )
     }
 
-    fun createCategory(name: String) {
-        if (name.isBlank()) return
-        launch {
-            val id = dispatcherIO { bookmarkRepository.createCategory(name) }
-            _uiState.emit(
-                _uiState.value.copy(
-                    bookmarkDialog = _uiState.value.bookmarkDialog.copy(selectedCategoryId = id)
-                )
-            )
-        }
-    }
-
     fun saveBookmark() {
         val dialog = _uiState.value.bookmarkDialog
         val categoryId = dialog.selectedCategoryId ?: return

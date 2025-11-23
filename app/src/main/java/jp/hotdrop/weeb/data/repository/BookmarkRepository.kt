@@ -73,7 +73,7 @@ class BookmarkRepository @Inject constructor(
                 )
             )
             SaveBookmarkResult.Success
-        } catch (e: SQLiteConstraintException) {
+        } catch (_: SQLiteConstraintException) {
             SaveBookmarkResult.Error(SaveBookmarkError.DuplicateBookMarkError)
         } catch (t: Throwable) {
             SaveBookmarkResult.Error(SaveBookmarkError.DataBaseError(t))
