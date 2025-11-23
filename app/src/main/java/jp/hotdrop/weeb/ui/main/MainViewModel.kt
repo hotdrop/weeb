@@ -41,7 +41,7 @@ class MainViewModel @Inject constructor(
             }
         }
         launch {
-            _effects.emit(MainEffect.LoadUrl(HOME_URL))
+            _effects.emit(MainEffect.LoadUrl(homeUrl))
         }
     }
 
@@ -58,9 +58,9 @@ class MainViewModel @Inject constructor(
     }
 
     fun loadHome() {
-        _uiState.value = _uiState.value.copy(addressText = HOME_URL)
+        _uiState.value = _uiState.value.copy(addressText = homeUrl)
         launch {
-            _effects.emit(MainEffect.LoadUrl(HOME_URL))
+            _effects.emit(MainEffect.LoadUrl(homeUrl))
         }
     }
 
@@ -177,7 +177,7 @@ class MainViewModel @Inject constructor(
     }
 }
 
-private val HOME_URL = "https://www.google.com/"
+private const val homeUrl = "https://www.google.com/"
 
 data class BookmarkDialogState(
     val isVisible: Boolean = false,
@@ -189,8 +189,8 @@ data class BookmarkDialogState(
 )
 
 data class MainUiState(
-    val addressText: String = HOME_URL,
-    val currentUrl: String = HOME_URL,
+    val addressText: String = homeUrl,
+    val currentUrl: String = homeUrl,
     val currentTitle: String = "",
     val canGoBack: Boolean = false,
     val isPcMode: Boolean = true,

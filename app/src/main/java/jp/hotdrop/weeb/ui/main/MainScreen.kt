@@ -57,16 +57,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.unit.sp
 import jp.hotdrop.weeb.model.BookMarkCategory
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.collectLatest
-
-private const val DESKTOP_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
 @SuppressLint("SetJavaScriptEnabled")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -104,7 +100,8 @@ fun MainScreen(
             setDownloadListener { _, _, _, _, _ -> }
         }
     }
-    val defaultUserAgent = remember { mutableStateOf<String?>(null) }
+    val mobileUserAgent = remember { webView.settings.userAgentString }
+    var hasAppliedUserAgent by remember { mutableStateOf(false) }
     var menuExpanded by remember { mutableStateOf(false) }
 
     DisposableEffect(Unit) {
@@ -145,7 +142,6 @@ fun MainScreen(
         }
         webView.webViewClient = client
         webView.webChromeClient = chromeClient
-        defaultUserAgent.value = webView.settings.userAgentString
         onDispose {
             webView.stopLoading()
             webView.destroy()
@@ -153,11 +149,11 @@ fun MainScreen(
     }
 
     LaunchedEffect(state.isPcMode) {
-        applyUserAgent(
-            webView.settings,
-            state.isPcMode,
-            defaultUserAgent.value ?: webView.settings.userAgentString
-        )
+        applyUserAgent(webView.settings, state.isPcMode, mobileUserAgent)
+        if (hasAppliedUserAgent && !webView.url.isNullOrBlank()) {
+            webView.reload()
+        }
+        hasAppliedUserAgent = true
     }
 
     LaunchedEffect(effects) {
@@ -373,6 +369,8 @@ private fun BookmarkSaveDialog(
         }
     )
 }
+
+private const val DESKTOP_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
 
 private fun applyUserAgent(settings: WebSettings, isPcMode: Boolean, mobileUserAgent: String) {
     if (isPcMode) {
