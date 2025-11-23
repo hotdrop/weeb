@@ -5,12 +5,11 @@ import jp.hotdrop.weeb.data.dao.BookmarkDao
 import jp.hotdrop.weeb.data.dao.CategoryDao
 import jp.hotdrop.weeb.data.entity.BookmarkEntity
 import jp.hotdrop.weeb.data.entity.CategoryEntity
-import jp.hotdrop.weeb.model.AppComplete
-import jp.hotdrop.weeb.model.AppError
-import jp.hotdrop.weeb.model.AppResult
 import jp.hotdrop.weeb.model.Bookmark
 import jp.hotdrop.weeb.model.BookMarkCategory
 import jp.hotdrop.weeb.model.CategoryWithBookmarks
+import jp.hotdrop.weeb.model.SaveBookmarkError
+import jp.hotdrop.weeb.model.SaveBookmarkResult
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
@@ -43,14 +42,12 @@ class BookmarkRepository @Inject constructor(
         )
     }
 
-    suspend fun getCategories(): AppResult<List<BookMarkCategory>> {
-        val categories = ensureDefaultCategory().map { it.toModel() }
-        return AppResult.Success(categories)
+    suspend fun getCategories(): List<BookMarkCategory> {
+        return ensureDefaultCategory().map { it.toModel() }
     }
 
-    suspend fun createCategory(name: String): AppResult<Long> {
-        val id = categoryDao.insert(CategoryEntity(name = name)).takeIf { it > 0L } ?: findExistingIdByName(name)
-        return AppResult.Success(id)
+    suspend fun createCategory(name: String): Long {
+        return categoryDao.insert(CategoryEntity(name = name)).takeIf { it > 0L } ?: findExistingIdByName(name)
     }
 
     suspend fun renameCategory(id: Long, name: String) {
@@ -65,7 +62,7 @@ class BookmarkRepository @Inject constructor(
         }
     }
 
-    suspend fun saveBookmark(title: String, url: String, categoryId: Long): AppComplete {
+    suspend fun saveBookmark(title: String, url: String, categoryId: Long): SaveBookmarkResult {
         ensureDefaultCategory()
         return try {
             bookmarkDao.insert(
@@ -75,11 +72,11 @@ class BookmarkRepository @Inject constructor(
                     categoryId = categoryId
                 )
             )
-            AppComplete.Complete
+            SaveBookmarkResult.Success
         } catch (e: SQLiteConstraintException) {
-            AppComplete.Error(AppError.DuplicateBookMarkError)
+            SaveBookmarkResult.Error(SaveBookmarkError.DuplicateBookMarkError)
         } catch (t: Throwable) {
-            AppComplete.Error(AppError.DataBaseError(t))
+            SaveBookmarkResult.Error(SaveBookmarkError.DataBaseError(t))
         }
     }
 
@@ -94,14 +91,12 @@ class BookmarkRepository @Inject constructor(
         bookmarkDao.findById(id)?.let { bookmarkDao.delete(it) }
     }
 
-    suspend fun isBookmarkRegistered(url: String): AppResult<Boolean> {
-        val result = bookmarkDao.findByUrl(url) != null
-        return AppResult.Success(result)
+    suspend fun isBookmarkRegistered(url: String): Boolean {
+        return bookmarkDao.findByUrl(url) != null
     }
 
-    suspend fun getBookmarkById(id: Long): AppResult<Bookmark?> {
-        val result = bookmarkDao.findById(id)?.toModel()
-        return AppResult.Success(result)
+    suspend fun getBookmarkById(id: Long): Bookmark? {
+        return bookmarkDao.findById(id)?.toModel()
     }
 
     private suspend fun ensureDefaultCategory(): List<CategoryEntity> {
