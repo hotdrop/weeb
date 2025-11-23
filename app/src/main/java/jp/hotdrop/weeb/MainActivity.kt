@@ -87,7 +87,8 @@ class MainActivity : ComponentActivity() {
                             onNewCategoryNameChange = viewModel::updateNewCategoryName,
                             newCategoryName = uiState.newCategoryName,
                             categoriesForSelection = uiState.categories.map { it.bookMarkCategory },
-                            onDismissDialog = viewModel::dismissDialogs
+                            onDismissDialog = viewModel::dismissDialogs,
+                            onToggleCategoryExpanded = viewModel::toggleCategoryExpanded
                         )
                     }
                 }

@@ -24,7 +24,16 @@ class BookmarkViewModel @Inject constructor(
     init {
         launch {
             bookmarkRepository.observeCategoriesWithBookmarks().collectLatest { categories ->
-                _uiState.emit(_uiState.value.copy(categories = categories))
+                val previousCategories = _uiState.value.categories.associateBy { it.bookMarkCategory.id }
+                val categoryIds = categories.map { it.bookMarkCategory.id }.toSet()
+                val retainedExpanded = _uiState.value.expandedCategoryIds.filter { it in categoryIds }.toSet()
+                val newlyAddedExpanded = categoryIds - previousCategories.keys
+                _uiState.emit(
+                    _uiState.value.copy(
+                        categories = categories,
+                        expandedCategoryIds = retainedExpanded + newlyAddedExpanded
+                    )
+                )
             }
         }
     }
@@ -120,6 +129,15 @@ class BookmarkViewModel @Inject constructor(
             categoryEditState = null
         )
     }
+
+    fun toggleCategoryExpanded(categoryId: Long) {
+        val updatedExpanded = if (_uiState.value.expandedCategoryIds.contains(categoryId)) {
+            _uiState.value.expandedCategoryIds - categoryId
+        } else {
+            _uiState.value.expandedCategoryIds + categoryId
+        }
+        _uiState.value = _uiState.value.copy(expandedCategoryIds = updatedExpanded)
+    }
 }
 
 data class BookmarkEditState(
@@ -139,6 +157,6 @@ data class BookmarkUiState(
     val bookmarkEditState: BookmarkEditState? = null,
     val categoryEditState: CategoryEditState? = null,
     val newCategoryName: String = "",
-    val message: String? = null
+    val message: String? = null,
+    val expandedCategoryIds: Set<Long> = emptySet()
 )
-

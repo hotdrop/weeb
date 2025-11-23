@@ -13,9 +13,9 @@ import androidx.compose.ui.unit.sp
 fun WeebTheme(content: @Composable () -> Unit) {
     val colorScheme = lightColorScheme(
         primary = Color(0xFF5E2EE5),
-        onPrimary = Color(0xFF5E2EE5),
-        secondary = Color(0xFF5E2EE5),
-        onSecondary = Color(0xFF5E2EE5),
+        onPrimary = Color(0xFFE9E3FA),
+        secondary = Color(0xFF8964F1),
+        onSecondary = Color(0xFFE9E2FC),
         tertiary = Color.Blue
     )
 

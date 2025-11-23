@@ -13,9 +13,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -56,7 +57,8 @@ fun BookmarkScreen(
     onNewCategoryNameChange: (String) -> Unit,
     newCategoryName: String,
     categoriesForSelection: List<BookMarkCategory>,
-    onDismissDialog: () -> Unit
+    onDismissDialog: () -> Unit,
+    onToggleCategoryExpanded: (Long) -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -105,6 +107,8 @@ fun BookmarkScreen(
                 items(state.categories) { categoryWithBookmarks ->
                     CategorySection(
                         categoryWithBookmarks = categoryWithBookmarks,
+                        isExpanded = state.expandedCategoryIds.contains(categoryWithBookmarks.bookMarkCategory.id),
+                        onToggleExpand = { onToggleCategoryExpanded(categoryWithBookmarks.bookMarkCategory.id) },
                         onBookmarkSelected = onBookmarkSelected,
                         onEditBookmark = onStartEditBookmark,
                         onDeleteBookmark = onDeleteBookmark,
@@ -140,6 +144,8 @@ fun BookmarkScreen(
 @Composable
 private fun CategorySection(
     categoryWithBookmarks: CategoryWithBookmarks,
+    isExpanded: Boolean,
+    onToggleExpand: () -> Unit,
     onBookmarkSelected: (String) -> Unit,
     onEditBookmark: (Bookmark) -> Unit,
     onDeleteBookmark: (Bookmark) -> Unit,
@@ -154,8 +160,20 @@ private fun CategorySection(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = categoryWithBookmarks.bookMarkCategory.name, fontWeight = FontWeight.Bold)
-            Row {
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable(onClick = onToggleExpand),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Icon(
+                    imageVector = if (isExpanded) Icons.Default.KeyboardArrowDown else Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = if (isExpanded) "閉じる" else "開く"
+                )
+                Text(text = categoryWithBookmarks.bookMarkCategory.name, fontWeight = FontWeight.Bold)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 IconButton(onClick = { onEditCategory(categoryWithBookmarks.bookMarkCategory) }) {
                     Icon(Icons.Default.Edit, contentDescription = "カテゴリ編集")
                 }
@@ -164,25 +182,27 @@ private fun CategorySection(
                 }
             }
         }
-        categoryWithBookmarks.bookmarks.forEach { bookmark ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onBookmarkSelected(bookmark.url) }
-                    .padding(8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(text = bookmark.title, fontWeight = FontWeight.Medium)
-                    Text(text = bookmark.url)
-                }
-                Row {
-                    IconButton(onClick = { onEditBookmark(bookmark) }) {
-                        Icon(Icons.Default.Edit, contentDescription = "編集")
+        if (isExpanded) {
+            categoryWithBookmarks.bookmarks.forEach { bookmark ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onBookmarkSelected(bookmark.url) }
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = bookmark.title, fontWeight = FontWeight.Medium)
+                        Text(text = bookmark.url)
                     }
-                    IconButton(onClick = { onDeleteBookmark(bookmark) }) {
-                        Icon(Icons.Default.Delete, contentDescription = "削除")
+                    Row {
+                        IconButton(onClick = { onEditBookmark(bookmark) }) {
+                            Icon(Icons.Default.Edit, contentDescription = "編集")
+                        }
+                        IconButton(onClick = { onDeleteBookmark(bookmark) }) {
+                            Icon(Icons.Default.Delete, contentDescription = "削除")
+                        }
                     }
                 }
             }
