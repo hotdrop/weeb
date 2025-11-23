@@ -1,7 +1,6 @@
 package jp.hotdrop.weeb
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -10,7 +9,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.fragment.app.FragmentActivity
 import dagger.hilt.android.AndroidEntryPoint
+import jp.hotdrop.weeb.ui.auth.BiometricAuthScreen
+import jp.hotdrop.weeb.ui.auth.BiometricAuthViewModel
 import jp.hotdrop.weeb.ui.bookmark.BookmarkScreen
 import jp.hotdrop.weeb.ui.bookmark.BookmarkViewModel
 import jp.hotdrop.weeb.ui.main.MainScreen
@@ -19,7 +21,7 @@ import jp.hotdrop.weeb.ui.navigation.AppDestination
 import jp.hotdrop.weeb.ui.theme.WeebTheme
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,8 +31,27 @@ class MainActivity : ComponentActivity() {
 
                 NavHost(
                     navController = navController,
-                    startDestination = AppDestination.Main.route
+                    startDestination = AppDestination.BiometricAuth.route
                 ) {
+                    composable(AppDestination.BiometricAuth.route) {
+                        val viewModel: BiometricAuthViewModel = hiltViewModel()
+                        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+                        BiometricAuthScreen(
+                            state = uiState,
+                            effects = viewModel.effects,
+                            onRetryAuthentication = viewModel::requestAuthentication,
+                            onAuthenticationSucceeded = viewModel::onAuthenticationSucceeded,
+                            onAuthenticationFailed = viewModel::onAuthenticationFailed,
+                            onAuthenticationError = viewModel::onAuthenticationError,
+                            onNavigateToMain = {
+                                navController.navigate(AppDestination.Main.route) {
+                                    popUpTo(AppDestination.BiometricAuth.route) { inclusive = true }
+                                }
+                            },
+                            onExitApp = { this@MainActivity.finish() }
+                        )
+                    }
                     composable(AppDestination.Main.route) { backStackEntry ->
                         val viewModel: MainViewModel = hiltViewModel()
                         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
