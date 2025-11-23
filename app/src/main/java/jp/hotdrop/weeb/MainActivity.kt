@@ -34,8 +34,7 @@ class MainActivity : ComponentActivity() {
                     composable(AppDestination.Main.route) { backStackEntry ->
                         val viewModel: MainViewModel = hiltViewModel()
                         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-                        val bookmarkUrlState =
-                            backStackEntry.savedStateHandle.getStateFlow<String?>("selected_bookmark", null)
+                        val bookmarkUrlState = backStackEntry.savedStateHandle.getStateFlow<String?>("selected_bookmark", null)
                         val bookmarkUrl by bookmarkUrlState.collectAsStateWithLifecycle()
 
                         LaunchedEffect(bookmarkUrl) {

@@ -24,10 +24,8 @@ class MainViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
 
-    private val _effects = MutableSharedFlow<MainEffect>()
+    private val _effects = MutableSharedFlow<MainEffect>(replay = 1)
     val effects: SharedFlow<MainEffect> = _effects.asSharedFlow()
-
-    private var hasLoadedHome = false
 
     init {
         launch {
@@ -44,7 +42,6 @@ class MainViewModel @Inject constructor(
         }
         launch {
             _effects.emit(MainEffect.LoadUrl(HOME_URL))
-            hasLoadedHome = true
         }
     }
 

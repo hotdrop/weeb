@@ -25,7 +25,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmarks
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Computer
@@ -61,12 +60,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.sp
 import jp.hotdrop.weeb.model.BookMarkCategory
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.collectLatest
 
-private const val DESKTOP_USER_AGENT =
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+private const val DESKTOP_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
 @SuppressLint("SetJavaScriptEnabled")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -112,12 +112,7 @@ fun MainScreen(
     DisposableEffect(Unit) {
         val client = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
-                val url = request.url.toString()
-                return if (isAllowedScheme(request.url)) {
-                    false
-                } else {
-                    true
-                }
+                return !isAllowedScheme(request.url)
             }
 
             override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
@@ -132,11 +127,7 @@ fun MainScreen(
                 }
             }
 
-            override fun onReceivedError(
-                view: WebView,
-                request: WebResourceRequest,
-                error: WebResourceError
-            ) {
+            override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
                 if (request.isForMainFrame) {
                     view.stopLoading()
                     view.loadUrl("about:blank")
@@ -178,7 +169,12 @@ fun MainScreen(
                     if (effect.reload) {
                         webView.reload()
                     } else {
-                        webView.loadUrl(effect.url)
+                        val currentUrl = webView.url
+                        if (currentUrl.isNullOrEmpty() || currentUrl != effect.url) {
+                            webView.loadUrl(effect.url)
+                        } else {
+                            webView.reload()
+                        }
                     }
                 }
                 MainEffect.Reload -> {
@@ -289,7 +285,11 @@ fun MainScreen(
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
                 factory = { webView },
-                update = {}
+                update = { view ->
+                    if (view.url.isNullOrEmpty() && state.currentUrl.isNotBlank()) {
+                        view.loadUrl(state.currentUrl)
+                    }
+                }
             )
         }
     }
@@ -300,10 +300,7 @@ fun MainScreen(
             categories = state.categories,
             onTitleChange = onBookmarkTitleChange,
             onCategorySelect = onSelectCategory,
-            onCreateCategory = { name ->
-                newCategoryName = ""
-                onCreateCategory(name)
-            },
+            onCreateCategory = { name -> onCreateCategory(name) },
             onSave = onSaveBookmark,
             onDismiss = onCloseBookmarkDialog,
             newCategoryName = newCategoryName,
