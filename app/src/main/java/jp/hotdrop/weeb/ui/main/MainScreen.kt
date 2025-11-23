@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmarks
 import androidx.compose.material.icons.filled.Close
@@ -163,7 +164,11 @@ fun MainScreen(
     }
 
     LaunchedEffect(state.isPcMode) {
-        applyUserAgent(webView.settings, state.isPcMode, defaultUserAgent.value ?: webView.settings.userAgentString)
+        applyUserAgent(
+            webView.settings,
+            state.isPcMode,
+            defaultUserAgent.value ?: webView.settings.userAgentString
+        )
     }
 
     LaunchedEffect(effects) {
@@ -230,7 +235,7 @@ fun MainScreen(
                             (context as? Activity)?.finish()
                         }
                     }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "back")
                     }
                 },
                 actions = {
