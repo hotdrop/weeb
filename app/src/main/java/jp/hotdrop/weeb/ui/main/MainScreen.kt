@@ -16,9 +16,11 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -58,7 +60,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import jp.hotdrop.weeb.model.BookMarkCategory
 import kotlinx.coroutines.flow.SharedFlow
@@ -195,11 +199,9 @@ fun MainScreen(
                         OutlinedTextField(
                             value = state.addressText,
                             onValueChange = onAddressChange,
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.weight(1f).height(46.dp),
                             singleLine = true,
-                            leadingIcon = {
-                                Icon(imageVector = Icons.Default.Search, contentDescription = "search")
-                            },
+                            textStyle = TextStyle(fontSize = 12.sp),
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = Color.Transparent,
                                 unfocusedContainerColor = Color.Transparent
