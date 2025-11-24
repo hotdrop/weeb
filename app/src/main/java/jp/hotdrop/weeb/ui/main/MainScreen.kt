@@ -2,8 +2,10 @@ package jp.hotdrop.weeb.ui.main
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Message
 import android.webkit.WebResourceError
 import android.webkit.SslErrorHandler
 import android.webkit.WebChromeClient
@@ -13,6 +15,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -85,26 +88,20 @@ fun MainScreen(
     onCloseBookmarkDialog: () -> Unit
 ) {
     val context = LocalContext.current
-    val webView = remember {
-        WebView(context).apply {
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            )
-            with(settings) {
-                javaScriptEnabled = true
-                domStorageEnabled = true
-                cacheMode = WebSettings.LOAD_DEFAULT
-                builtInZoomControls = true
-                displayZoomControls = false
-                setSupportZoom(true)
-            }
-            setDownloadListener { _, _, _, _, _ -> }
-        }
-    }
+    val webView = remember { createConfiguredWebView(context) }
+    var popupWebView by remember { mutableStateOf<WebView?>(null) }
+    var isPopupVisible by remember { mutableStateOf(false) }
     val mobileUserAgent = remember { webView.settings.userAgentString }
     var hasAppliedUserAgent by remember { mutableStateOf(false) }
     var menuExpanded by remember { mutableStateOf(false) }
+    val closePopup: () -> Unit = {
+        popupWebView?.apply {
+            stopLoading()
+            destroy()
+        }
+        popupWebView = null
+        isPopupVisible = false
+    }
 
     DisposableEffect(Unit) {
         val client = object : WebViewClient() {
@@ -141,12 +138,65 @@ fun MainScreen(
                     onPageUpdated(web.url.orEmpty(), title, web.canGoBack())
                 }
             }
+
+            override fun onCreateWindow(
+                view: WebView?,
+                isDialog: Boolean,
+                isUserGesture: Boolean,
+                resultMsg: Message?
+            ): Boolean {
+                if (popupWebView != null) {
+                    closePopup()
+                }
+                val transport = resultMsg?.obj as? WebView.WebViewTransport ?: return false
+                val popupClient = object : WebViewClient() {
+                    override fun shouldOverrideUrlLoading(
+                        view: WebView,
+                        request: WebResourceRequest
+                    ): Boolean = !isAllowedScheme(request.url)
+
+                    override fun onReceivedError(
+                        view: WebView,
+                        request: WebResourceRequest,
+                        error: WebResourceError
+                    ) {
+                        if (request.isForMainFrame) {
+                            view.stopLoading()
+                            view.loadUrl("about:blank")
+                        }
+                    }
+
+                    override fun onReceivedSslError(
+                        view: WebView?,
+                        handler: SslErrorHandler?,
+                        error: android.net.http.SslError?
+                    ) {
+                        handler?.cancel()
+                    }
+                }
+                val popupChromeClient = object : WebChromeClient() {
+                    override fun onCloseWindow(window: WebView?) {
+                        closePopup()
+                    }
+                }
+                val targetWebView = createConfiguredWebView(context).apply {
+                    webViewClient = popupClient
+                    webChromeClient = popupChromeClient
+                }
+                applyUserAgent(targetWebView.settings, state.isPcMode, mobileUserAgent)
+                popupWebView = targetWebView
+                isPopupVisible = true
+                transport.webView = targetWebView
+                resultMsg?.sendToTarget()
+                return true
+            }
         }
         webView.webViewClient = client
         webView.webChromeClient = chromeClient
         onDispose {
             webView.stopLoading()
             webView.destroy()
+            popupWebView?.destroy()
         }
     }
 
@@ -181,6 +231,15 @@ fun MainScreen(
     }
 
     BackHandler {
+        if (isPopupVisible) {
+            val popup = popupWebView
+            if (popup != null && popup.canGoBack()) {
+                popup.goBack()
+            } else {
+                closePopup()
+            }
+            return@BackHandler
+        }
         if (webView.canGoBack()) {
             webView.goBack()
             onPageUpdated(webView.url.orEmpty(), webView.title, webView.canGoBack())
@@ -271,20 +330,42 @@ fun MainScreen(
             )
         }
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxSize()
         ) {
-            AndroidView(
-                modifier = Modifier.fillMaxSize(),
-                factory = { webView },
-                update = { view ->
-                    if (view.url.isNullOrEmpty() && state.currentUrl.isNotBlank()) {
-                        view.loadUrl(state.currentUrl)
+            Column(modifier = Modifier.fillMaxSize()) {
+                AndroidView(
+                    modifier = Modifier.fillMaxSize(),
+                    factory = { webView },
+                    update = { view ->
+                        if (view.url.isNullOrEmpty() && state.currentUrl.isNotBlank()) {
+                            view.loadUrl(state.currentUrl)
+                        }
+                    }
+                )
+            }
+            if (isPopupVisible && popupWebView != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.4f))
+                ) {
+                    AndroidView(
+                        modifier = Modifier.fillMaxSize(),
+                        factory = { popupWebView!! }
+                    )
+                    IconButton(
+                        onClick = closePopup,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(8.dp)
+                    ) {
+                        Icon(Icons.Default.Close, contentDescription = "close popup", tint = Color.White)
                     }
                 }
-            )
+            }
         }
     }
 
@@ -371,6 +452,26 @@ private fun BookmarkSaveDialog(
 }
 
 private const val DESKTOP_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
+
+private fun createConfiguredWebView(context: Context): WebView {
+    return WebView(context).apply {
+        layoutParams = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        )
+        with(settings) {
+            javaScriptEnabled = true
+            javaScriptCanOpenWindowsAutomatically = true
+            domStorageEnabled = true
+            cacheMode = WebSettings.LOAD_DEFAULT
+            builtInZoomControls = true
+            displayZoomControls = false
+            setSupportZoom(true)
+            setSupportMultipleWindows(true)
+        }
+        setDownloadListener { _, _, _, _, _ -> }
+    }
+}
 
 private fun applyUserAgent(settings: WebSettings, isPcMode: Boolean, mobileUserAgent: String) {
     if (isPcMode) {
