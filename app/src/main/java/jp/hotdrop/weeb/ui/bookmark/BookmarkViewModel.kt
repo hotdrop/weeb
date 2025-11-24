@@ -26,11 +26,10 @@ class BookmarkViewModel @Inject constructor(
                 val previousCategories = _uiState.value.categories.associateBy { it.bookMarkCategory.id }
                 val categoryIds = categories.map { it.bookMarkCategory.id }.toSet()
                 val retainedExpanded = _uiState.value.expandedCategoryIds.filter { it in categoryIds }.toSet()
-                val newlyAddedExpanded = categoryIds - previousCategories.keys
                 _uiState.emit(
                     _uiState.value.copy(
                         categories = categories,
-                        expandedCategoryIds = retainedExpanded + newlyAddedExpanded
+                        expandedCategoryIds = retainedExpanded
                     )
                 )
             }

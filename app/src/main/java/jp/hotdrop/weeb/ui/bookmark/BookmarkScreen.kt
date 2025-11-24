@@ -33,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import jp.hotdrop.weeb.model.Bookmark
 import jp.hotdrop.weeb.model.BookMarkCategory
@@ -194,7 +195,11 @@ private fun CategorySection(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(text = bookmark.title, fontWeight = FontWeight.Medium)
-                        Text(text = bookmark.url)
+                        Text(
+                            text = bookmark.url,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                     Row {
                         IconButton(onClick = { onEditBookmark(bookmark) }) {
